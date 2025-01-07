@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 	"testing"
 	"time"
 )
@@ -96,12 +95,8 @@ func TestAll(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 
-	wait := sync.WaitGroup{}
-
-	wait.Add(1)
 	c1 := make(chan bool)
 	go func(c chan bool) {
-		defer wait.Done()
 		res, _ := makeGetRequest("http://localhost:3001/delete", t)
 
 		if res.StatusCode == http.StatusBadRequest {
@@ -112,11 +107,9 @@ func TestDelete(t *testing.T) {
 
 	}(c1)
 
-	wait.Add(1)
 	c2 := make(chan bool)
 	go func(c chan bool) {
 		res, _ := makeGetRequest("http://localhost:3001/delete?id=abc", t)
-		defer wait.Done()
 
 		if res.StatusCode == http.StatusBadRequest {
 			c <- true
@@ -126,10 +119,8 @@ func TestDelete(t *testing.T) {
 
 	}(c2)
 
-	wait.Add(1)
 	c3 := make(chan bool)
 	go func(c chan bool) {
-		defer wait.Done()
 		_, body := makeGetRequest("http://localhost:3001/delete?id=1000000", t)
 		expected := "0\n"
 		parsed := string(body)
@@ -142,11 +133,9 @@ func TestDelete(t *testing.T) {
 
 	}(c3)
 
-	wait.Add(1)
 	c4 := make(chan bool)
 	go func(c chan bool) {
 		_, body := makeGetRequest("http://localhost:3001/delete?id=1", t)
-		defer wait.Done()
 		expected := "1\n"
 		parsed := string(body)
 
@@ -175,7 +164,6 @@ func TestDelete(t *testing.T) {
 	if !ok {
 		t.Fatalf("Expected '1' GOT: Something else")
 	}
-	wait.Wait()
 
 }
 
