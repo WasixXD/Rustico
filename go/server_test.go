@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -55,6 +56,29 @@ func TestCreate(t *testing.T) {
 		log.Fatalf("StatusCode expected: %d Got: %d", expected, res.StatusCode)
 	}
 
+}
+
+func TestRandomProject(t *testing.T) {
+	res, err := http.Get("http://localhost:3001/random")
+
+	if err != nil {
+		t.Fatal("Couldn't make GET request: ", err)
+	}
+
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		t.Fatal("Couldn't read body: ", err)
+	}
+
+	var project ProjectResponse
+	err = json.Unmarshal(body, &project)
+
+	if err != nil {
+		t.Fatalf("Expected %+v GOT: %v", project, err)
+	}
 }
 
 func TestMain(m *testing.M) {
