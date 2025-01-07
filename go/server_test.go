@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"testing"
 	"time"
 )
@@ -95,8 +96,12 @@ func TestAll(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 
+	wait := sync.WaitGroup{}
+
+	wait.Add(1)
 	c1 := make(chan bool)
 	go func(c chan bool) {
+		defer wait.Done()
 		res, _ := makeGetRequest("http://localhost:3001/delete", t)
 
 		if res.StatusCode == http.StatusBadRequest {
@@ -107,9 +112,11 @@ func TestDelete(t *testing.T) {
 
 	}(c1)
 
+	wait.Add(1)
 	c2 := make(chan bool)
 	go func(c chan bool) {
 		res, _ := makeGetRequest("http://localhost:3001/delete?id=abc", t)
+		defer wait.Done()
 
 		if res.StatusCode == http.StatusBadRequest {
 			c <- true
@@ -119,8 +126,10 @@ func TestDelete(t *testing.T) {
 
 	}(c2)
 
+	wait.Add(1)
 	c3 := make(chan bool)
 	go func(c chan bool) {
+		defer wait.Done()
 		_, body := makeGetRequest("http://localhost:3001/delete?id=1000000", t)
 		expected := "0\n"
 		parsed := string(body)
@@ -133,9 +142,11 @@ func TestDelete(t *testing.T) {
 
 	}(c3)
 
+	wait.Add(1)
 	c4 := make(chan bool)
 	go func(c chan bool) {
 		_, body := makeGetRequest("http://localhost:3001/delete?id=1", t)
+		defer wait.Done()
 		expected := "1\n"
 		parsed := string(body)
 
@@ -147,25 +158,24 @@ func TestDelete(t *testing.T) {
 
 	}(c4)
 
-	select {
-	case ok := <-c1:
-		if !ok {
-			t.Fatalf("Error on GET request")
-		}
-	case ok := <-c2:
-		if !ok {
-			t.Fatalf("Passed id=abc but server didn't catch it")
-		}
-
-	case ok := <-c3:
-		if !ok {
-			t.Fatalf("Passed id=1000000 but server didn't catch it")
-		}
-	case ok := <-c4:
-		if !ok {
-			t.Fatalf("Expected '1' GOT: Something else")
-		}
+	ok := <-c1
+	if !ok {
+		t.Fatalf("Error on GET request")
 	}
+	ok = <-c2
+	if !ok {
+		t.Fatalf("Passed id=abc but server didn't catch it")
+	}
+
+	ok = <-c3
+	if !ok {
+		t.Fatalf("Passed id=1000000 but server didn't catch it")
+	}
+	ok = <-c4
+	if !ok {
+		t.Fatalf("Expected '1' GOT: Something else")
+	}
+	wait.Wait()
 
 }
 
