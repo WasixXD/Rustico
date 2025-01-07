@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -13,18 +14,6 @@ import (
 var db *sql.DB
 
 const DB_PATH = "../project.db"
-
-type ProjectRequest struct {
-	Project_name string `json:"project_name"`
-	Description  string `json:"description"`
-}
-
-type ProjectResponse struct {
-	Id      int    `json:"id"`
-	Name    string `json:"project_name"`
-	Desc    string `json:"description"`
-	Created string `json:"created_at"`
-}
 
 func Root(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Hello, World!"))
@@ -74,6 +63,68 @@ func GetRandomProject(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func AllProjects(w http.ResponseWriter, req *http.Request) {
+	enableCors(&w)
+
+	result, err := db.Query("select id, project_name, description, created_at, github_url from projects;")
+
+	if err != nil {
+		log.Println("Error on querying: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var response []ProjectResponse
+	var project ProjectResponse
+
+	for {
+		result.Next()
+		err := result.Scan(&project.Id, &project.Name, &project.Desc, &project.Created, &project.GithubUrl)
+		if err != nil {
+			break
+		}
+		response = append(response, project)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+
+}
+
+func DeleteProject(w http.ResponseWriter, req *http.Request) {
+	enableCors(&w)
+
+	query := req.URL.Query().Get("id")
+
+	if query == "" {
+		log.Println("Deleting doesn't have a query")
+		http.Error(w, "Please provide the id", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(query)
+
+	if err != nil {
+		log.Println("ID is not a number: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := db.Exec("delete from projects where id = ?", id)
+
+	if err != nil {
+		log.Println("Something went wrong when querying: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+
+	json.NewEncoder(w).Encode(rows)
+
+}
+
 func ServerInit() {
 	var err error
 	db, err = sql.Open("sqlite3", DB_PATH)
@@ -87,6 +138,8 @@ func ServerInit() {
 	mux.Handle("/", http.HandlerFunc(Root))
 	mux.Handle("/create", http.HandlerFunc(CreateProject))
 	mux.Handle("/random", http.HandlerFunc(GetRandomProject))
+	mux.Handle("/delete", http.HandlerFunc(DeleteProject))
+	mux.Handle("/all", http.HandlerFunc(AllProjects))
 
 	http.ListenAndServe(":3001", mux)
 }
