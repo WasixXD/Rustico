@@ -24,7 +24,6 @@ type ProjectResponse struct {
 	Name    string `json:"project_name"`
 	Desc    string `json:"description"`
 	Created string `json:"created_at"`
-	Url     string `json:"github_url"`
 }
 
 func Root(w http.ResponseWriter, req *http.Request) {
@@ -59,11 +58,11 @@ func CreateProject(w http.ResponseWriter, req *http.Request) {
 
 func GetRandomProject(w http.ResponseWriter, req *http.Request) {
 	enableCors(&w)
-	result := db.QueryRow("select id, project_name, description, created_at, case when github_url is null then '' else github_url end as github_url from projects order by random() limit 1;")
+	result := db.QueryRow("select id, project_name, description, created_at from projects order by random() limit 1;")
 
 	var response ProjectResponse
 
-	err := result.Scan(&response.Id, &response.Name, &response.Desc, &response.Created, &response.Url)
+	err := result.Scan(&response.Id, &response.Name, &response.Desc, &response.Created)
 
 	if err != nil {
 		log.Println("Error on scanning the row: ", err)
