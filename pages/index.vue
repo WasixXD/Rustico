@@ -86,6 +86,7 @@
 
         try {
             const _ = await $fetch(`${server_url}/complete?id=${id.value}&url=${githubUrl.value}`)
+            randomPost()
         } catch(e) {
             console.log(e)
         }

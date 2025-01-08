@@ -66,7 +66,7 @@ func GetRandomProject(w http.ResponseWriter, req *http.Request) {
 func AllProjects(w http.ResponseWriter, req *http.Request) {
 	enableCors(&w)
 
-	result, err := db.Query("select id, project_name, description, created_at, github_url from projects where github_url is not null;")
+	result, err := db.Query("select id, project_name, description, strftime('%Y.%m.%d', created_at) as created_at, github_url from projects where github_url is not null;")
 
 	if err != nil {
 		log.Println("Error on querying: ", err)
