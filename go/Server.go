@@ -47,7 +47,7 @@ func CreateProject(w http.ResponseWriter, req *http.Request) {
 
 func GetRandomProject(w http.ResponseWriter, req *http.Request) {
 	enableCors(&w)
-	result := db.QueryRow("select id, project_name, description, created_at from projects order by random() limit 1;")
+	result := db.QueryRow("select id, project_name, description, created_at from projects where github_url is null order by random() limit 1;")
 
 	var response ProjectResponse
 
@@ -66,7 +66,7 @@ func GetRandomProject(w http.ResponseWriter, req *http.Request) {
 func AllProjects(w http.ResponseWriter, req *http.Request) {
 	enableCors(&w)
 
-	result, err := db.Query("select id, project_name, description, created_at, github_url from projects;")
+	result, err := db.Query("select id, project_name, description, created_at, github_url from projects where github_url is not null;")
 
 	if err != nil {
 		log.Println("Error on querying: ", err)
