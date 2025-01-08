@@ -93,6 +93,44 @@ func TestAll(t *testing.T) {
 	}
 }
 
+func TestComplete(t *testing.T) {
+	c1 := make(chan bool)
+	go func(c chan bool) {
+		res, _ := makeGetRequest("http://localhost:3001/complete", t)
+
+		if res.StatusCode == http.StatusBadRequest {
+			c <- true
+			return
+		}
+		c <- false
+
+	}(c1)
+
+	c2 := make(chan bool)
+	go func(c chan bool) {
+		res, body := makeGetRequest("http://localhost:3001/complete?id=1&url=asdf", t)
+		expected := "1\n"
+
+		parsed := string(body)
+
+		if res.StatusCode == http.StatusOK && expected == parsed {
+			c <- true
+			return
+		}
+		c <- false
+
+	}(c2)
+
+	if ok := <-c1; !ok {
+		t.Fatalf("Error on GET request to /complete")
+	}
+
+	if ok := <-c2; !ok {
+		t.Fatalf("Error on completing")
+	}
+
+}
+
 func TestDelete(t *testing.T) {
 
 	c1 := make(chan bool)
@@ -147,24 +185,21 @@ func TestDelete(t *testing.T) {
 
 	}(c4)
 
-	ok := <-c1
-	if !ok {
-		t.Fatalf("Error on GET request")
+	if ok := <-c1; !ok {
+		t.Fatalf("Error on GET request to /delete")
 	}
-	ok = <-c2
-	if !ok {
+
+	if ok := <-c2; !ok {
 		t.Fatalf("Passed id=abc but server didn't catch it")
 	}
 
-	ok = <-c3
-	if !ok {
+	if ok := <-c3; !ok {
 		t.Fatalf("Passed id=1000000 but server didn't catch it")
 	}
-	ok = <-c4
-	if !ok {
+
+	if ok := <-c4; !ok {
 		t.Fatalf("Expected '1' GOT: Something else")
 	}
-
 }
 
 func TestMain(m *testing.M) {

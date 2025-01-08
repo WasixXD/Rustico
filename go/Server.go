@@ -122,7 +122,44 @@ func DeleteProject(w http.ResponseWriter, req *http.Request) {
 	rows, _ := result.RowsAffected()
 
 	json.NewEncoder(w).Encode(rows)
+}
 
+// should probably put this in a middleware
+func CompleteProject(w http.ResponseWriter, req *http.Request) {
+	enableCors(&w)
+
+	query := req.URL.Query().Get("id")
+	url := req.URL.Query().Get("url")
+
+	if query == "" {
+		log.Println("Completing doesn't have a query")
+		http.Error(w, "Please provide the id", http.StatusBadRequest)
+		return
+	} else if url == "" {
+		log.Println("Completing doesn't have a url")
+		http.Error(w, "Please provide the url", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(query)
+
+	if err != nil {
+		log.Println("ID is not a number: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := db.Exec("update projects set github_url = ? where id = ?", url, id)
+
+	if err != nil {
+		log.Println("Something went wrong when querying: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+
+	json.NewEncoder(w).Encode(rows)
 }
 
 func ServerInit() {
@@ -139,6 +176,7 @@ func ServerInit() {
 	mux.Handle("/create", http.HandlerFunc(CreateProject))
 	mux.Handle("/random", http.HandlerFunc(GetRandomProject))
 	mux.Handle("/delete", http.HandlerFunc(DeleteProject))
+	mux.Handle("/complete", http.HandlerFunc(CompleteProject))
 	mux.Handle("/all", http.HandlerFunc(AllProjects))
 
 	http.ListenAndServe(":3001", mux)
