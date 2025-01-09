@@ -22,9 +22,9 @@ COPY --from=backend ./app/backend /usr/local/bin/backend
 RUN apk add --no-cache sqlite
 COPY ./.output /app/.output
 COPY ./sql/ /app
-# RUN sqlite3 -init /app/init.sql /usr/local/bin/project.db .quit
+RUN sqlite3 -init /app/init.sql /app/project.db .quit
 COPY ./go/project.db /usr/local/bin/project.db
 EXPOSE 3001 
 
 # Comando para rodar o backend e o frontend
-CMD ["sh", "-c", "/usr/local/bin/backend "]
+CMD ["sh", "-c", "/usr/local/bin/backend & node /app/.output/server/index.mjs"]

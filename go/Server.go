@@ -13,7 +13,7 @@ import (
 
 var db *sql.DB
 
-const DB_PATH = "./project.db"
+const DB_PATH = "/app/project.db"
 
 func Root(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Hello, World!"))
