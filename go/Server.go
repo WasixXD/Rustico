@@ -13,7 +13,7 @@ import (
 
 var db *sql.DB
 
-const DB_PATH = "../project.db"
+const DB_PATH = "./project.db"
 
 func Root(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Hello, World!"))
@@ -179,5 +179,5 @@ func ServerInit() {
 	mux.Handle("/complete", http.HandlerFunc(CompleteProject))
 	mux.Handle("/all", http.HandlerFunc(AllProjects))
 
-	http.ListenAndServe(":3001", mux)
+	http.ListenAndServe("0.0.0.0:3001", mux)
 }
