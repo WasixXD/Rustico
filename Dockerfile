@@ -15,8 +15,6 @@ FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates nodejs npm
 
-ENV SERVER_URL=http://localhost:3001
-
 COPY --from=backend ./app/backend /usr/local/bin/backend
 
 RUN apk add --no-cache sqlite
